@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="./room.js" defer></script>
+    <link rel="stylesheet" href="room_style.css">
+</head>
+
+<body>
+    <div>
+        <video id="remote-video" autoplay playsinline></video>
+    </div>
+    <div class="ui">
+        <video id="local-video" autoplay muted playsinline></video>
+        <div class="info">
+            <span>Room: </span><span id="room-title"></span><br />
+            <span>Status: </span><span id="info">Waiting For Connection...</span>
+            <span id="error"></span>
+        </div>
+
+        <div class="controls">
+            <button id="mute-button">Mute</button>
+            <button id="fullscreen-button">Fullscreen</button>
+            <div class="select">
+                <select id="videoSource"></select>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
