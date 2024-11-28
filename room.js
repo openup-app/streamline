@@ -65,7 +65,7 @@ function setCallQuality(call) {
                 parameters.encodings = [{}];
             }
 
-            parameters.encodings[0].maxBitrate = 10000000;
+            parameters.encodings[0].maxBitrate = 40000000;
             parameters.encodings[0].maxFramerate = 60;
             parameters.encodings[0].scaleResolutionDownBy = 1.0;
 
@@ -117,7 +117,7 @@ function useVp9SdpTransform(sdp) {
 
             // Add bitrate settings for VP9
             if (line.startsWith(`a=rtpmap:${vp9PayloadType}`)) {
-                return `${line}\r\na=fmtp:${vp9PayloadType} x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
+                return `${line}\r\na=fmtp:${vp9PayloadType} x-google-min-bitrate=40000;x-google-max-bitrate=40000;x-google-start-bitrate=40000`;
             }
 
             return line;
@@ -175,6 +175,54 @@ function useAv1SdpTransform(sdp) {
     return updatedSDP.join("\r\n");
 }
 
+function useH264SdpTransform(sdp) {
+    // Split the SDP into lines for processing
+    const sdpLines = sdp.split('\r\n');
+
+    // Extract the H.264 payload types
+    let h264PayloadTypes = [];
+    for (const line of sdpLines) {
+        if (line.startsWith("a=rtpmap:") && line.includes("H264/90000")) {
+            // e.g., "a=rtpmap:102 H264/90000" -> 102
+            const payloadType = line.split(" ")[0].split(":")[1];
+            h264PayloadTypes.push(payloadType);
+        }
+    }
+
+    // If H.264 isn't present in the SDP, return the original SDP
+    if (h264PayloadTypes.length === 0) {
+        console.warn("H264 codec not found in SDP");
+        return sdp;
+    }
+
+    const updatedSDP = sdpLines
+        .map((line) => {
+            // Ensure H.264 has the highest priority in m=video
+            if (line.startsWith("m=video")) {
+                const parts = line.split(" ");
+                const codecIndices = parts.slice(3); // Codec payload types
+                const prioritized = [...h264PayloadTypes, ...codecIndices.filter((p) => !h264PayloadTypes.includes(p))];
+                return `${parts.slice(0, 3).join(" ")} ${prioritized.join(" ")}`;
+            }
+
+            // Modify H.264 fmtp lines for high profile and packetization mode 1, with 4K settings
+            if (line.startsWith(`a=fmtp:`)) {
+                h264PayloadTypes.forEach((pt) => {
+                    if (line.startsWith(`a=fmtp:${pt}`)) {
+                        // Add/modify H.264 settings for 4K, 60fps, high profile, packetization mode 1
+                        return `a=fmtp:${pt} level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=64001f;max-fr=60;max-fs=8294400`;
+                    }
+                });
+            }
+
+            return line;
+        });
+
+    // Return the modified SDP
+    return updatedSDP.join("\r\n");
+}
+
+
 async function init() {
     let isMuted = false;
 
@@ -195,12 +243,9 @@ async function init() {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: "environment",
-                width: {
-                    ideal: 3840
-                },
-                height: {
-                    ideal: 2160
-                }
+                width: { ideal: 3840 },
+                height: { ideal: 2160 },
+                frameRate: { exact: 60 },
             },
             audio: {
                 echoCancellation: true,
