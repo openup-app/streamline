@@ -194,7 +194,13 @@ async function init() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                facingMode: "environment"
+                facingMode: "environment",
+                width: {
+                    ideal: 3840
+                },
+                height: {
+                    ideal: 2160
+                }
             },
             audio: {
                 echoCancellation: true,
