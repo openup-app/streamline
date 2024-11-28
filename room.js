@@ -100,13 +100,6 @@ function useVp9SdpTransform(sdp) {
     }
 
     const updatedSDP = sdpLines
-        .filter((line) => {
-            // Remove lines that set retransmission or recovery options for non-VP9 codecs
-            if (line.startsWith("a=rtcp-fb:") && !line.includes(`a=rtcp-fb:${vp9PayloadType}`)) {
-                return false;
-            }
-            return true;
-        })
         .map((line) => {
             // Ensure VP9 has the highest priority in m=video
             if (line.startsWith("m=video")) {
@@ -115,12 +108,25 @@ function useVp9SdpTransform(sdp) {
                 const prioritized = [vp9PayloadType, ...codecIndices.filter((p) => p !== vp9PayloadType)];
                 return `${parts.slice(0, 3).join(" ")} ${prioritized.join(" ")}`;
             }
+
+            // Modify VP9 fmtp line to enforce 4K settings
+            if (line.startsWith(`a=fmtp:${vp9PayloadType}`)) {
+                // Add/modify VP9 settings for max resolution, frame rate, and bitrate
+                return `a=fmtp:${vp9PayloadType} profile-id=0;max-fr=30;max-fs=921600;level-asymmetry-allowed=1`;
+            }
+
+            // Add bitrate settings for VP9
+            if (line.startsWith(`a=rtpmap:${vp9PayloadType}`)) {
+                return `${line}\r\na=fmtp:${vp9PayloadType} x-google-min-bitrate=40000;x-google-max-bitrate=40000;x-google-start-bitrate=40000`;
+            }
+
             return line;
         });
 
     // Return the modified SDP
     return updatedSDP.join("\r\n");
 }
+
 
 function useAv1SdpTransform(sdp) {
     // Split the SDP into lines for processing
@@ -184,18 +190,19 @@ async function init() {
     }
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: "environment"
-            },
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-            }
-        });
+        // const stream = await navigator.mediaDevices.getUserMedia({
+        //     video: {
+        //         facingMode: "environment"
+        //     },
+        //     audio: {
+        //         echoCancellation: true,
+        //         noiseSuppression: true,
+        //         autoGainControl: true,
+        //     }
+        // });
 
-        localVideo.srcObject = stream;
+        // localVideo.srcObject = stream;
+        const stream = localVideo.captureStream();
         const myId = `com_openup_${roomName}_${isHost ? 'host' : 'client'}`;
         const peer = new window.Peer(myId);
 
