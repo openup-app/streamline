@@ -190,19 +190,19 @@ async function init() {
     }
 
     try {
-        // const stream = await navigator.mediaDevices.getUserMedia({
-        //     video: {
-        //         facingMode: "environment"
-        //     },
-        //     audio: {
-        //         echoCancellation: true,
-        //         noiseSuppression: true,
-        //         autoGainControl: true,
-        //     }
-        // });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "environment"
+            },
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+            }
+        });
 
-        // localVideo.srcObject = stream;
-        const stream = localVideo.captureStream();
+        localVideo.srcObject = stream;
+        // const stream = localVideo.captureStream();
         const myId = `com_openup_${roomName}_${isHost ? 'host' : 'client'}`;
         const peer = new window.Peer(myId);
 
@@ -211,7 +211,8 @@ async function init() {
 
             peer.on('call', call => {
                 globalCall = call;
-                call.answer(stream, { sdpTransform: useVp9SdpTransform });
+                const options = { sdpTransform: useVp9SdpTransform };
+                call.answer(stream, options);
                 call.on('stream', remoteStream => {
                     infoText.innerHTML = "Connected";
                     remoteVideo.srcObject = remoteStream;
