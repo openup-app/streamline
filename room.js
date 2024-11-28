@@ -65,7 +65,7 @@ function setCallQuality(call) {
                 parameters.encodings = [{}];
             }
 
-            parameters.encodings[0].maxBitrate = 140000000;
+            parameters.encodings[0].maxBitrate = 80000000;
             parameters.encodings[0].maxFramerate = 60;
             parameters.encodings[0].scaleResolutionDownBy = 1.0;
 
@@ -117,7 +117,7 @@ function useVp9SdpTransform(sdp) {
 
             // Add bitrate settings for VP9
             if (line.startsWith(`a=rtpmap:${vp9PayloadType}`)) {
-                return `${line}\r\na=fmtp:${vp9PayloadType} x-google-min-bitrate=140000;x-google-max-bitrate=140000;x-google-start-bitrate=140000`;
+                return `${line}\r\na=fmtp:${vp9PayloadType} x-google-min-bitrate=80000;x-google-max-bitrate=80000;x-google-start-bitrate=80000`;
             }
 
             return line;
