@@ -66,7 +66,7 @@ function setCallQuality(call) {
             }
 
             parameters.encodings[0].maxBitrate = 30000000;
-            parameters.encodings[0].maxFramerate = 30;
+            parameters.encodings[0].maxFramerate = 60;
             parameters.encodings[0].scaleResolutionDownBy = 1.0;
 
             try {
@@ -112,7 +112,7 @@ function useVp9SdpTransform(sdp) {
             // Modify VP9 fmtp line to enforce 4K settings
             if (line.startsWith(`a=fmtp:${vp9PayloadType}`)) {
                 // Add/modify VP9 settings for max resolution, frame rate, and bitrate
-                return `a=fmtp:${vp9PayloadType} profile-id=0;max-fr=30;max-fs=921600;level-asymmetry-allowed=1`;
+                return `a=fmtp:${vp9PayloadType} profile-id=0;max-fr=60;max-fs=921600;level-asymmetry-allowed=1`;
             }
 
             // Add bitrate settings for VP9
