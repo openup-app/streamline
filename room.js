@@ -65,7 +65,7 @@ function setCallQuality(call) {
                 parameters.encodings = [{}];
             }
 
-            parameters.encodings[0].maxBitrate = 30000000;
+            parameters.encodings[0].maxBitrate = 140000000;
             parameters.encodings[0].maxFramerate = 60;
             parameters.encodings[0].scaleResolutionDownBy = 1.0;
 
@@ -112,12 +112,12 @@ function useVp9SdpTransform(sdp) {
             // Modify VP9 fmtp line to enforce 4K settings
             if (line.startsWith(`a=fmtp:${vp9PayloadType}`)) {
                 // Add/modify VP9 settings for max resolution, frame rate, and bitrate
-                return `a=fmtp:${vp9PayloadType} profile-id=0;max-fr=60;max-fs=921600;level-asymmetry-allowed=1`;
+                return `a=fmtp:${vp9PayloadType} profile-id=2;max-fr=60;max-fs=8294400;level-asymmetry-allowed=1`;
             }
 
             // Add bitrate settings for VP9
             if (line.startsWith(`a=rtpmap:${vp9PayloadType}`)) {
-                return `${line}\r\na=fmtp:${vp9PayloadType} x-google-min-bitrate=40000;x-google-max-bitrate=40000;x-google-start-bitrate=40000`;
+                return `${line}\r\na=fmtp:${vp9PayloadType} x-google-min-bitrate=140000;x-google-max-bitrate=140000;x-google-start-bitrate=140000`;
             }
 
             return line;
@@ -133,7 +133,6 @@ function useAv1SdpTransform(sdp) {
     const sdpLines = sdp.split('\r\n');
 
     // Extract the AV1 payload type which is dynamic
-    // see https://en.wikipedia.org/wiki/RTP_payload_formats
     let av1PayloadType = null;
     for (const line of sdpLines) {
         if (line.startsWith("a=rtpmap:") && line.includes("AV1/90000")) {
@@ -150,13 +149,6 @@ function useAv1SdpTransform(sdp) {
     }
 
     const updatedSDP = sdpLines
-        .filter((line) => {
-            // Remove lines that set retransmission or recovery options for non-AV1 codecs
-            if (line.startsWith("a=rtcp-fb:") && !line.includes(`a=rtcp-fb:${av1PayloadType}`)) {
-                return false;
-            }
-            return true;
-        })
         .map((line) => {
             // Ensure AV1 has the highest priority in m=video
             if (line.startsWith("m=video")) {
@@ -165,12 +157,22 @@ function useAv1SdpTransform(sdp) {
                 const prioritized = [av1PayloadType, ...codecIndices.filter((p) => p !== av1PayloadType)];
                 return `${parts.slice(0, 3).join(" ")} ${prioritized.join(" ")}`;
             }
+
+            // Modify AV1 fmtp line to enforce high-resolution settings
+            if (line.startsWith(`a=fmtp:${av1PayloadType}`)) {
+                return `a=fmtp:${av1PayloadType} level-idx=13;profile=1;tier=0;max-fr=60;max-fs=829440;max-br=140000;`;
+            }
+
+            // Add bitrate settings for AV1
+            if (line.startsWith(`a=rtpmap:${av1PayloadType}`)) {
+                return `${line}\r\na=fmtp:${av1PayloadType} x-google-min-bitrate=140000;x-google-max-bitrate=140000;x-google-start-bitrate=140000`;
+            }
+
             return line;
         });
 
     // Return the modified SDP
-    const out = updatedSDP.join("\r\n");
-    return out;
+    return updatedSDP.join("\r\n");
 }
 
 async function init() {
