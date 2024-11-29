@@ -6,7 +6,6 @@ const fullscreenButton = document.getElementById('fullscreen-button');
 const videoSelect = document.querySelector('select#videoSource');
 const infoText = document.getElementById('info');
 const errorText = document.getElementById('error');
-let globalCall;
 
 function toggleFullScreen() {
     if (document.fullscreenElement) {
@@ -160,7 +159,7 @@ function useAv1SdpTransform(sdp) {
 
             // Modify AV1 fmtp line to enforce high-resolution settings
             if (line.startsWith(`a=fmtp:${av1PayloadType}`)) {
-                return `a=fmtp:${av1PayloadType} level-idx=13;profile=1;tier=0;max-fr=60;max-fs=829440;max-br=140000;`;
+                return `a=fmtp:${av1PayloadType} level-idx=5;profile=1;tier=0;max-fr=60;max-fs=829440;max-br=140000;`;
             }
 
             // Add bitrate settings for AV1
@@ -210,7 +209,7 @@ function useH264SdpTransform(sdp) {
                 h264PayloadTypes.forEach((pt) => {
                     if (line.startsWith(`a=fmtp:${pt}`)) {
                         // Add/modify H.264 settings for 4K, 60fps, high profile, packetization mode 1
-                        return `a=fmtp:${pt} level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=64001f;max-fr=60;max-fs=8294400`;
+                        return `a=fmtp:${pt} level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=64001f;max-fr=60;max-fs=518400;x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
                     }
                 });
             }
@@ -240,31 +239,32 @@ async function init() {
     }
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: "environment",
-                width: { ideal: 3840 },
-                height: { ideal: 2160 },
-                frameRate: { exact: 60 },
-            },
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-            }
-        });
+        // const stream = await navigator.mediaDevices.getUserMedia({
+        //     video: {
+        //         facingMode: "environment",
+        //         width: { ideal: 3840 },
+        //         height: { ideal: 2160 },
+        //         frameRate: { exact: 60 },
+        //     },
+        //     audio: {
+        //         echoCancellation: true,
+        //         noiseSuppression: true,
+        //         autoGainControl: true,
+        //     }
+        // });
+        // localVideo.srcObject = stream;
 
-        localVideo.srcObject = stream;
-        // const stream = localVideo.captureStream();
+        const stream = localVideo.captureStream();
+
         const myId = `com_openup_${roomName}_${isHost ? 'host' : 'client'}`;
         const peer = new window.Peer(myId);
 
         peer.on('open', id => {
             console.log(`Open with id ${id}`);
 
+            const transform = useVp9SdpTransform;
             peer.on('call', call => {
-                globalCall = call;
-                const options = { sdpTransform: useVp9SdpTransform };
+                const options = { sdpTransform: transform };
                 call.answer(stream, options);
                 call.on('stream', remoteStream => {
                     infoText.innerHTML = "Connected";
@@ -279,9 +279,8 @@ async function init() {
 
             if (!isHost) {
                 const partnerId = `com_openup_${roomName}_${isHost ? 'client' : 'host'}`;
-                const options = { sdpTransform: useVp9SdpTransform };
+                const options = { sdpTransform: transform };
                 const call = peer.call(partnerId, stream, options);
-                globalCall = call;
                 call.on('stream', remoteStream => {
                     infoText.innerHTML = "Connected";
                     remoteVideo.srcObject = remoteStream;
@@ -316,5 +315,12 @@ async function init() {
     }
 }
 
-init();
+let started = false;
+localVideo.oncanplay = () => {
+    if (!started) {
+        started = true;
+        console.log("READY");
+        init();
+    }
+};
 updateCameraList();
