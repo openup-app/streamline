@@ -216,7 +216,6 @@ function useH264SdpTransform(sdp) {
             }
         }
     }
-    console.log(`Target payload type ${targetPayloadType}`);
 
     const updatedSDP = sdpLines
         .map((line) => {
