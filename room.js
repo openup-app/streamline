@@ -231,7 +231,7 @@ function useH264SdpTransform(sdp) {
             if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
                 // For profile-level-id see https://stackoverflow.com/a/63048402/1702627
                 // profile_idc 0x64 = high
-                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=10000;x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
+                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=10000`;
             }
 
             return line;
