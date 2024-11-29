@@ -175,6 +175,7 @@ function useAv1SdpTransform(sdp) {
 }
 
 function useH264SdpTransform(sdp) {
+    return sdp;
     console.log(sdp);
     console.log("-------");
     // Split the SDP into lines for processing
