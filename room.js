@@ -64,8 +64,8 @@ function setCallQuality(call) {
                 parameters.encodings = [{}];
             }
 
-            parameters.encodings[0].maxBitrate = 10000000;
-            parameters.encodings[0].maxFramerate = 60;
+            parameters.encodings[0].maxBitrate = 15000000;
+            parameters.encodings[0].maxFramerate = 24;
             parameters.encodings[0].scaleResolutionDownBy = 1.0;
 
             try {
@@ -224,14 +224,14 @@ function useH264SdpTransform(sdp) {
                 const parts = line.split(" ");
                 const codecIndices = parts.slice(3); // Codec payload types
                 const prioritized = [targetPayloadType, ...codecIndices.filter((p) => p !== targetPayloadType)];
-                return `${parts.slice(0, 3).join(" ")} ${prioritized.join(" ")}`;
+                // return `${parts.slice(0, 3).join(" ")} ${prioritized.join(" ")}`;
             }
 
             // Modify fmtp line to enforce high-resolution settings
             if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
                 // For profile-level-id see https://stackoverflow.com/a/63048402/1702627
                 // profile_idc 0x64 = high
-                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=10000;x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
+                // return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=10000;x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
             }
 
             return line;
@@ -262,15 +262,15 @@ async function init() {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: "environment",
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-                frameRate: { ideal: 60 },
+                width: { exact: 3840 },
+                height: { exact: 2160 },
+                frameRate: { exact: 24 },
             },
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
-            }
+            },
         });
         localVideo.srcObject = stream;
 
@@ -280,25 +280,25 @@ async function init() {
         const partnerId = `com_openup_${roomName}_${isHost ? 'client' : 'host'}`;
         const peer = new window.Peer(myId);
 
-        peer.on('open', id => {
+        peer.on('open', async id => {
             console.log(`Open with id ${id}`);
 
             const transform = useH264SdpTransform;
-            peer.on('call', call => {
-                const options = { sdpTransform: transform };
-                call.answer(stream, options);
-                call.on('stream', remoteStream => {
-                    infoText.innerHTML = "Connected";
-                    remoteVideo.srcObject = remoteStream;
-                });
-                call.on('close', () => {
-                    infoText.innerHTML = "Waiting For Connection";
-                });
+            if (isHost) {
+                peer.on('call', call => {
+                    const options = { sdpTransform: transform };
+                    call.answer(stream, options);
+                    call.on('stream', remoteStream => {
+                        infoText.innerHTML = "Connected";
+                        remoteVideo.srcObject = remoteStream;
+                    });
+                    call.on('close', () => {
+                        infoText.innerHTML = "Waiting For Connection";
+                    });
 
-                setCallQuality(call);
-            });
-
-            if (!isHost) {
+                    setCallQuality(call);
+                });
+            } else {
                 const options = { sdpTransform: transform };
                 const call = peer.call(partnerId, stream, options);
                 call.on('stream', remoteStream => {
