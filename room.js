@@ -64,7 +64,7 @@ function setCallQuality(call) {
                 parameters.encodings = [{}];
             }
 
-            parameters.encodings[0].maxBitrate = 40000000;
+            parameters.encodings[0].maxBitrate = 10000000;
             parameters.encodings[0].maxFramerate = 60;
             parameters.encodings[0].scaleResolutionDownBy = 1.0;
 
