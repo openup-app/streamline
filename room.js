@@ -231,7 +231,7 @@ function useH264SdpTransform(sdp) {
             if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
                 // For profile-level-id see https://stackoverflow.com/a/63048402/1702627
                 // profile_idc 0x64 = high
-                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=10000`;
+                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=10000;x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
             }
 
             return line;
@@ -277,12 +277,13 @@ async function init() {
         // const stream = localVideo.captureStream();
 
         const myId = `com_openup_${roomName}_${isHost ? 'host' : 'client'}`;
+        const partnerId = `com_openup_${roomName}_${isHost ? 'client' : 'host'}`;
         const peer = new window.Peer(myId);
 
         peer.on('open', id => {
             console.log(`Open with id ${id}`);
 
-            const transform = useVp9SdpTransform;
+            const transform = useH264SdpTransform;
             peer.on('call', call => {
                 const options = { sdpTransform: transform };
                 call.answer(stream, options);
@@ -298,7 +299,6 @@ async function init() {
             });
 
             if (!isHost) {
-                const partnerId = `com_openup_${roomName}_${isHost ? 'client' : 'host'}`;
                 const options = { sdpTransform: transform };
                 const call = peer.call(partnerId, stream, options);
                 call.on('stream', remoteStream => {
@@ -327,11 +327,9 @@ async function init() {
         fullscreenButton.addEventListener('click', () => {
             toggleFullScreen();
         })
-
     } catch (e) {
         console.log(`Error getting local media: ${e}`);
         errorText.innerHTML = `Error getting local media: ${e}`;
-
     }
 }
 
