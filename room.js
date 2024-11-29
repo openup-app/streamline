@@ -282,7 +282,7 @@ async function init() {
         peer.on('open', id => {
             console.log(`Open with id ${id}`);
 
-            const transform = useH264SdpTransform;
+            const transform = useVp9SdpTransform;
             peer.on('call', call => {
                 const options = { sdpTransform: transform };
                 call.answer(stream, options);
