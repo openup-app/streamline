@@ -64,7 +64,7 @@ function setCallQuality(call) {
                 parameters.encodings = [{}];
             }
 
-            parameters.encodings[0].maxBitrate = 10000000;
+            parameters.encodings[0].maxBitrate = 20000000;
             parameters.encodings[0].maxFramerate = 60;
             parameters.encodings[0].scaleResolutionDownBy = 1.0;
 
@@ -175,7 +175,6 @@ function useAv1SdpTransform(sdp) {
 }
 
 function useH264SdpTransform(sdp) {
-    return sdp;
     console.log(sdp);
     console.log("-------");
     // Split the SDP into lines for processing
@@ -229,14 +228,9 @@ function useH264SdpTransform(sdp) {
             }
 
             // Modify fmtp line to enforce high-resolution settings
-            // if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
-            //     return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=40000;x-google-min-bitrate=40000;x-google-max-bitrate=40000;x-google-start-bitrate=40000`;
-            // }
-
-            // // Add bitrate settings
-            // if (line.startsWith(`a=rtpmap:${av1PayloadType}`)) {
-            //     return `${line}\r\na=fmtp:${av1PayloadType} x-google-min-bitrate=140000;x-google-max-bitrate=140000;x-google-start-bitrate=140000`;
-            // }
+            if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
+                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=20000;x-google-min-bitrate=20000;x-google-max-bitrate=20000;x-google-start-bitrate=20000`;
+            }
 
             return line;
         });
