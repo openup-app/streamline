@@ -175,6 +175,8 @@ function useAv1SdpTransform(sdp) {
 }
 
 function useH264SdpTransform(sdp) {
+    console.log(sdp);
+    console.log("-------");
     // Split the SDP into lines for processing
     const sdpLines = sdp.split('\r\n');
 
@@ -194,25 +196,47 @@ function useH264SdpTransform(sdp) {
         return sdp;
     }
 
+    let targetPayloadType;
+    for (const line of sdpLines) {
+        let isH264Line = false;
+        for (const pt of h264PayloadTypes) {
+            if (line.startsWith(`a=fmtp:${pt}`)) {
+                isH264Line = true;
+                break;
+            }
+        }
+
+        if (isH264Line) {
+            const isHighProfile = line.includes("profile-level-id=4d001f");
+            const isPacketization1 = line.includes("packetization-mode=1");
+            if (isHighProfile && isPacketization1) {
+                const payloadType = line.split(" ")[0].split(":")[1];
+                targetPayloadType = payloadType
+                break;
+            }
+        }
+    }
+    console.log(`Target payload type ${targetPayloadType}`);
+
     const updatedSDP = sdpLines
         .map((line) => {
-            // Ensure H.264 has the highest priority in m=video
+            // Ensure H264 has the highest priority in m=video
             if (line.startsWith("m=video")) {
                 const parts = line.split(" ");
                 const codecIndices = parts.slice(3); // Codec payload types
-                const prioritized = [...h264PayloadTypes, ...codecIndices.filter((p) => !h264PayloadTypes.includes(p))];
+                const prioritized = [targetPayloadType, ...codecIndices.filter((p) => p !== targetPayloadType)];
                 return `${parts.slice(0, 3).join(" ")} ${prioritized.join(" ")}`;
             }
 
-            // Modify H.264 fmtp lines for high profile and packetization mode 1, with 4K settings
-            if (line.startsWith(`a=fmtp:`)) {
-                h264PayloadTypes.forEach((pt) => {
-                    if (line.startsWith(`a=fmtp:${pt}`)) {
-                        // Add/modify H.264 settings for 4K, 60fps, high profile, packetization mode 1
-                        return `a=fmtp:${pt} level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=64001f;max-fr=60;max-fs=518400;x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
-                    }
-                });
+            // Modify fmtp line to enforce high-resolution settings
+            if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
+                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=10000;x-google-min-bitrate=10000;x-google-max-bitrate=10000;x-google-start-bitrate=10000`;
             }
+
+            // // Add bitrate settings
+            // if (line.startsWith(`a=rtpmap:${av1PayloadType}`)) {
+            //     return `${line}\r\na=fmtp:${av1PayloadType} x-google-min-bitrate=140000;x-google-max-bitrate=140000;x-google-start-bitrate=140000`;
+            // }
 
             return line;
         });
@@ -239,22 +263,22 @@ async function init() {
     }
 
     try {
-        // const stream = await navigator.mediaDevices.getUserMedia({
-        //     video: {
-        //         facingMode: "environment",
-        //         width: { ideal: 3840 },
-        //         height: { ideal: 2160 },
-        //         frameRate: { exact: 60 },
-        //     },
-        //     audio: {
-        //         echoCancellation: true,
-        //         noiseSuppression: true,
-        //         autoGainControl: true,
-        //     }
-        // });
-        // localVideo.srcObject = stream;
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "environment",
+                width: { ideal: 3840 },
+                height: { ideal: 2160 },
+                frameRate: { ideal: 60 },
+            },
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+            }
+        });
+        localVideo.srcObject = stream;
 
-        const stream = localVideo.captureStream();
+        // const stream = localVideo.captureStream();
 
         const myId = `com_openup_${roomName}_${isHost ? 'host' : 'client'}`;
         const peer = new window.Peer(myId);
@@ -316,11 +340,11 @@ async function init() {
 }
 
 let started = false;
-localVideo.oncanplay = () => {
-    if (!started) {
-        started = true;
-        console.log("READY");
-        init();
-    }
-};
+// localVideo.oncanplay = () => {
+if (!started) {
+    started = true;
+    console.log("READY");
+    init();
+}
+// };
 updateCameraList();
