@@ -228,9 +228,9 @@ function useH264SdpTransform(sdp) {
             }
 
             // Modify fmtp line to enforce high-resolution settings
-            if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
-                return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=40000;x-google-min-bitrate=40000;x-google-max-bitrate=40000;x-google-start-bitrate=40000`;
-            }
+            // if (line.startsWith(`a=fmtp:${targetPayloadType}`)) {
+            //     return `a=fmtp:${targetPayloadType} level-asymmetry-allowed=0;packetization-mode=1;profile-level-id=4d001f;min-fr=60;max-fr=60;max-fs=8160;max-mbps=489600;max-br=40000;x-google-min-bitrate=40000;x-google-max-bitrate=40000;x-google-start-bitrate=40000`;
+            // }
 
             // // Add bitrate settings
             // if (line.startsWith(`a=rtpmap:${av1PayloadType}`)) {
@@ -263,13 +263,12 @@ async function init() {
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
-            // video: {
-            //     // facingMode: "environment",
-            //     // width: { ideal: 1920 },
-            //     // height: { ideal: 1080 },
-            //     frameRate: { ideal: 60 },
-            // },
-            video: true,
+            video: {
+                facingMode: "environment",
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                frameRate: { ideal: 60 },
+            },
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
