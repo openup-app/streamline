@@ -8,10 +8,14 @@ const infoText = document.getElementById('info');
 const errorText = document.getElementById('error');
 
 function toggleFullScreen() {
-    if (document.fullscreenElement) {
-        document.exitFullscreen();
+    if (remoteVideo.webkitEnterFullScreen) {
+        remoteVideo.webkitEnterFullScreen();
     } else {
-        document.documentElement.requestFullscreen();
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else {
+            document.documentElement.requestFullscreen();
+        }
     }
 }
 
@@ -262,8 +266,8 @@ async function init() {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: "environment",
-                width: { exact: 3840 },
-                height: { exact: 2160 },
+                width: { ideal: 3840 },
+                height: { ideal: 2160 },
                 frameRate: { exact: 24 },
             },
             audio: {
