@@ -1,0 +1,30 @@
+name: streamline
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  ffmpeg_kit_flutter_min: ^6.0.3
+  permission_handler: ^11.3.1
+  path_provider: ^2.1.5
+  video_player: ^2.9.2
+  http: ^1.2.2
+  path: ^1.9.0
+  peerdart: ^0.5.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+
+flutter:
+
+  uses-material-design: true

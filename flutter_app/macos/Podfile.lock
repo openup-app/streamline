@@ -1,0 +1,32 @@
+PODS:
+  - ffmpeg-kit-macos-min (6.0)
+  - ffmpeg_kit_flutter_min (6.0.3):
+    - ffmpeg_kit_flutter_min/min (= 6.0.3)
+    - FlutterMacOS
+  - ffmpeg_kit_flutter_min/min (6.0.3):
+    - ffmpeg-kit-macos-min (= 6.0)
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+
+DEPENDENCIES:
+  - ffmpeg_kit_flutter_min (from `Flutter/ephemeral/.symlinks/plugins/ffmpeg_kit_flutter_min/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+
+SPEC REPOS:
+  trunk:
+    - ffmpeg-kit-macos-min
+
+EXTERNAL SOURCES:
+  ffmpeg_kit_flutter_min:
+    :path: Flutter/ephemeral/.symlinks/plugins/ffmpeg_kit_flutter_min/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+
+SPEC CHECKSUMS:
+  ffmpeg-kit-macos-min: f4af1f4c86ed307c31269c74a29076b9d186659f
+  ffmpeg_kit_flutter_min: 84339d4748a410fd7f0fcad78bd9ae4814d797be
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+
+PODFILE CHECKSUM: 9ebaf0ce3d369aaa26a9ea0e159195ed94724cf3
+
+COCOAPODS: 1.15.2

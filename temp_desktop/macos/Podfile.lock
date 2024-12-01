@@ -1,0 +1,43 @@
+PODS:
+  - flutter_webrtc (0.11.3):
+    - FlutterMacOS
+    - WebRTC-SDK (= 125.6422.04)
+  - FlutterMacOS (1.0.0)
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - video_player_avfoundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - WebRTC-SDK (125.6422.04)
+
+DEPENDENCIES:
+  - flutter_webrtc (from `Flutter/ephemeral/.symlinks/plugins/flutter_webrtc/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
+  - video_player_avfoundation (from `Flutter/ephemeral/.symlinks/plugins/video_player_avfoundation/darwin`)
+
+SPEC REPOS:
+  trunk:
+    - WebRTC-SDK
+
+EXTERNAL SOURCES:
+  flutter_webrtc:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_webrtc/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  path_provider_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
+  video_player_avfoundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/video_player_avfoundation/darwin
+
+SPEC CHECKSUMS:
+  flutter_webrtc: 2b4e4a2de70a1485836e40fd71a7a94c77d49bd9
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  video_player_avfoundation: 7c6c11d8470e1675df7397027218274b6d2360b3
+  WebRTC-SDK: c3d69a87e7185fad3568f6f3cff7c9ac5890acf3
+
+PODFILE CHECKSUM: 236401fc2c932af29a9fcf0e97baeeb2d750d367
+
+COCOAPODS: 1.15.2
