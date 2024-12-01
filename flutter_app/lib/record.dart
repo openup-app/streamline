@@ -31,13 +31,20 @@ Future<Stream<List<int>>?> startRecording() async {
   final id = Random().nextInt(100000000);
   // final outputFile = File('${outputDir.path}/recording_$id.$extension');
   final outputFile = File('${outputDir.path}/out.sdp');
+  await outputFile.create();
 
   // final pipe = await FFmpegKitConfig.registerNewFFmpegPipe();
   // if (pipe == null) {
   //   return null;
   // }
-  final command =
-      '''-hide_banner -s 1920x1080 -f avfoundation -framerate 60 -i \"0\" -c:v hevc_videotoolbox -b:v 25M -r 60 -g 2 -profile:v main10 -pix_fmt nv12 -t 10 -y -f rtp rtp://192.168.86.139:1234 -sdp_file ${outputFile.path}''';
+  final String command;
+  if (Platform.isIOS) {
+    command =
+        '''-hide_banner -s 1920x1080 -f avfoundation -framerate 60 -i \"0\" -c:v hevc_videotoolbox -b:v 25M -r 60 -g 2 -profile:v main10 -pix_fmt nv12 -t 10 -y -f rtp rtp://192.168.86.139:1234 -sdp_file ${outputFile.path}''';
+  } else {
+    command =
+        '''-hide_banner -s 1920x1080 -f android_camera -framerate 30 -i "0" -c:v hevc -b:v 25M -r 30 -g 2 -profile:v main10 -pix_fmt nv12 -t 10 -y -f rtp rtp://192.168.86.22:1234 -sdp_file ${outputFile.path}''';
+  }
 
   // Read the output from the pipe
   final completer = Completer<File>();
