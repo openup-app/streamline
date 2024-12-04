@@ -30,7 +30,7 @@ class IncomingVideoLocalServer {
     _responseController.close();
   }
 
-  Uri get address => Uri.parse('${_server.address.host}:${_server.port}');
+  String get url => 'http://${_server.address.host}:${_server.port}';
 }
 
 Future<HttpServer> _createServer(

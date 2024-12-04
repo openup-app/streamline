@@ -52,7 +52,7 @@ class _VideoPageState extends State<VideoPage> {
       return;
     }
     setState(() => _localServer = server);
-    _player.open(Media(server.address.path));
+    _player.open(Media(server.url));
   }
 
   void _connect() async {
