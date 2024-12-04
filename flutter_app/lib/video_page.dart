@@ -81,19 +81,49 @@ class _VideoPageState extends State<VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final localServer = _localServer;
-    if (localServer == null) {
-      return const SizedBox.shrink();
-    }
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Video(
-        controller: _videoController,
-        controls: (_) => const SizedBox.shrink(),
+      body: Builder(
+        builder: (context) {
+          final localServer = _localServer;
+          if (localServer == null) {
+            return const SizedBox.shrink();
+          }
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: Video(
+                  controller: _videoController,
+                  controls: (_) => const SizedBox.shrink(),
+                ),
+              ),
+              Positioned(
+                left: 8,
+                top: MediaQuery.of(context).padding.top + 8,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.4),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          'Room: ${widget.roomId} (${widget.isHost ? 'Host' : 'Client'})'),
+                      Text(
+                          'Status: ${_connection == null ? 'Waiting for connection' : 'Connected'}'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
