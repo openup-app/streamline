@@ -31,8 +31,8 @@ Future<Stream<List<int>>?> startRecording() async {
   outputDir.create(recursive: true);
   final id = Random().nextInt(100000000);
   // final outputFile = File('${outputDir.path}/recording_$id.$extension');
-  final outputFile = File('${outputDir.path}/out.sdp');
-  await outputFile.create();
+  // final outputFile = File('${outputDir.path}/out.sdp');
+  // await outputFile.create();
 
   final pipe = await FFmpegKitConfig.registerNewFFmpegPipe();
   if (pipe == null) {
@@ -44,11 +44,11 @@ Future<Stream<List<int>>?> startRecording() async {
         '''-hide_banner -s 1920x1080 -f avfoundation -framerate 30 -i \"0\" -c:v hevc_videotoolbox -b:v 25M -r 30 -g 2 -profile:v main10 -pix_fmt nv12 -t 10 -y -f hevc $pipe''';
   } else {
     command =
-        '''-hide_banner -s 1920x1080 -f android_camera -framerate 30 -i "0" -c:v hevc -b:v 25M -r 30 -g 2 -profile:v main10 -pix_fmt nv12 -t 10 -y -f rtp rtp://192.168.86.22:1234 -sdp_file ${outputFile.path}''';
+        '''-hide_banner -s 1920x1080 -f android_camera -framerate 30 -i "0" -c:v hevc -b:v 25M -r 30 -g 2 -profile:v main10 -pix_fmt nv12 -t 10 -y -f hevc $pipe''';
   }
 
   // Read the output from the pipe
-  final outputSink = outputFile.openWrite();
+  // final outputSink = outputFile.openWrite();
   final byteStream = File(pipe).openRead();
   // byteStream.listen(outputSink.add);
 
@@ -64,9 +64,9 @@ Future<Stream<List<int>>?> startRecording() async {
     (log) => print(log.getMessage()),
   );
 
-  await Future.delayed(const Duration(seconds: 1));
-  final sdp = await outputFile.readAsString();
-  print(sdp);
+  // await Future.delayed(const Duration(seconds: 1));
+  // final sdp = await outputFile.readAsString();
+  // print(sdp);
 
   return byteStream;
   // return Stream.fromIterable([]);

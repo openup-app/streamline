@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage> {
                 if (stream != null) {
                   // print('Has stream');
                   stream.listen((data) {
-                    // _connection?.sendUint8List(Uint8List.fromList(data));
+                    _connection?.sendUint8List(Uint8List.fromList(data));
                   });
                   // startHttpStreamServer(stream);
                   // streamMKVToVLC(stream, '192.168.86.139', 12345);

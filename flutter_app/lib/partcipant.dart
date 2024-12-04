@@ -32,10 +32,8 @@ class Connection {
   }
 
   Future<void> sendUint8List(Uint8List data) async {
-    print('Sending ${data.length}');
     if (_connection.open) {
       await _connection.sendBinary(data);
-      await _connection.send("wanted to send binary data");
     }
   }
 
