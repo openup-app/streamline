@@ -39,6 +39,7 @@ class _VideoPageState extends State<VideoPage> {
 
   @override
   void dispose() {
+    stopRecording();
     _localServer?.dispose();
     _connection?.close();
     _player.dispose();
