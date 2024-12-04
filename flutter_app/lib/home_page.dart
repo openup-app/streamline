@@ -24,50 +24,53 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Calling Demo'),
         centerTitle: true,
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 300),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _controller,
-                textCapitalization: TextCapitalization.none,
-                decoration: const InputDecoration(
-                  hintText: 'Room ID',
-                  border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _controller,
+                  textCapitalization: TextCapitalization.none,
+                  decoration: const InputDecoration(
+                    hintText: 'Room ID',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return FilledButton(
-                    onPressed: _controller.text.isEmpty
-                        ? null
-                        : () =>
-                            _joinRoom(_controller.text.trim(), isHost: true),
-                    child: const Text('Create'),
-                  );
-                },
-              ),
-              const Center(
-                child: Text('or'),
-              ),
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return FilledButton(
-                    onPressed: _controller.text.isEmpty
-                        ? null
-                        : () =>
-                            _joinRoom(_controller.text.trim(), isHost: false),
-                    child: const Text('Join'),
-                  );
-                },
-              ),
-            ],
+                const SizedBox(height: 16),
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return FilledButton(
+                      onPressed: _controller.text.isEmpty
+                          ? null
+                          : () =>
+                              _joinRoom(_controller.text.trim(), isHost: true),
+                      child: const Text('Create'),
+                    );
+                  },
+                ),
+                const Center(
+                  child: Text('or'),
+                ),
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return FilledButton(
+                      onPressed: _controller.text.isEmpty
+                          ? null
+                          : () =>
+                              _joinRoom(_controller.text.trim(), isHost: false),
+                      child: const Text('Join'),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
