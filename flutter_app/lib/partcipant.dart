@@ -31,15 +31,17 @@ class Connection {
     });
   }
 
+  void send(dynamic data) => _connection.send(data);
+
   Future<void> sendUint8List(Uint8List data) async {
     if (_connection.open) {
       await _connection.sendBinary(data);
     }
   }
 
-  Future<void> send(dynamic data) => _connection.send(data);
-
   Stream<dynamic> get data => _connection.on("data");
+
+  Stream<Uint8List> get binaryStream => _connection.on("binary");
 
   void close() {
     _connection.close();
