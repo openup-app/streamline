@@ -26,6 +26,7 @@ class _VideoPageState extends State<VideoPage> {
   Connection? _connection;
   late final _player = Player();
   late final _videoController = VideoController(_player);
+  bool _ready = false;
 
   @override
   void initState() {
@@ -53,7 +54,6 @@ class _VideoPageState extends State<VideoPage> {
       return;
     }
     setState(() => _localServer = server);
-    _player.open(Media(server.url));
   }
 
   void _connect() async {
@@ -73,6 +73,11 @@ class _VideoPageState extends State<VideoPage> {
     }
     setState(() => _connection = connection);
 
+    final localServer = _localServer;
+    if (localServer != null) {
+      await _player.open(Media(localServer.url));
+    }
+
     // Receive remote video
     final h265Stream =
         connection.binaryStream.map((e) => Uint8List.fromList(e));
@@ -87,6 +92,11 @@ class _VideoPageState extends State<VideoPage> {
     outputStream
         ?.map((e) => Uint8List.fromList(e))
         .listen((data) => connection.sendUint8List(data));
+
+    if (!mounted) {
+      return;
+    }
+    setState(() => _ready = true);
   }
 
   @override
@@ -126,7 +136,7 @@ class _VideoPageState extends State<VideoPage> {
                       Text(
                           'Room: ${widget.roomId} (${widget.isHost ? 'Host' : 'Client'})'),
                       Text(
-                          'Status: ${_connection == null ? 'Waiting for connection' : 'Connected'}'),
+                          'Status: ${_connection == null ? 'Waiting for connection' : !_ready ? 'Connecting' : 'Connected'}'),
                     ],
                   ),
                 ),

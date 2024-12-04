@@ -11,6 +11,7 @@ import 'package:shelf_router/shelf_router.dart';
 class IncomingVideoLocalServer {
   final HttpServer _server;
   final StreamController<Uint8List> _responseController;
+  StreamSubscription? _streamSubscription;
 
   static Future<IncomingVideoLocalServer> create({
     String mimeType = 'video/mp4',
@@ -22,10 +23,15 @@ class IncomingVideoLocalServer {
 
   IncomingVideoLocalServer._(this._server, this._responseController);
 
-  void addStream(Stream<Uint8List> stream) =>
-      _responseController.addStream(stream);
+  void addStream(Stream<Uint8List> stream) {
+    _streamSubscription?.cancel();
+    _streamSubscription = stream.listen((data) {
+      _responseController.add(data);
+    });
+  }
 
   void dispose() {
+    _streamSubscription?.cancel();
     _server.close();
     _responseController.close();
   }
