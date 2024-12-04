@@ -2,10 +2,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:media_kit_video/media_kit_video.dart' as mk;
 import 'package:streamline/incoming_video.dart';
 import 'package:streamline/partcipant.dart';
 import 'package:streamline/record.dart';
+import 'package:video_player/video_player.dart';
 
 class VideoPage extends StatefulWidget {
   final String roomId;
@@ -22,39 +23,48 @@ class VideoPage extends StatefulWidget {
 }
 
 class _VideoPageState extends State<VideoPage> {
-  IncomingVideoLocalServer? _localServer;
+  // IncomingVideoLocalServer? _localServer;
+  final _hlsServer = HlsServer();
   Connection? _connection;
   late final _player = Player();
-  late final _videoController = VideoController(_player);
+  // late final _videoController = VideoController(_player);
+  VideoPlayerController? _videoPlayerController;
   bool _ready = false;
 
   @override
   void initState() {
     super.initState();
-    _initLocalServer().then((_) {
-      if (mounted) {
-        _connect();
+    _hlsServer.start().then((_) async {
+      if (!mounted) {
+        return;
       }
+      _connect();
     });
+    // _initLocalServer().then((_) {
+    //   if (mounted) {
+    //     _connect();
+    //   }
+    // });
   }
 
   @override
   void dispose() {
     stopRecording();
-    _localServer?.dispose();
+    // _localServer?.dispose();
+    _hlsServer.dispose();
     _connection?.close();
     _player.dispose();
     super.dispose();
   }
 
-  Future<void> _initLocalServer() async {
-    final server = await IncomingVideoLocalServer.create();
-    if (!mounted) {
-      server.dispose();
-      return;
-    }
-    setState(() => _localServer = server);
-  }
+  // Future<void> _initLocalServer() async {
+  //   final server = await IncomingVideoLocalServer.create();
+  //   if (!mounted) {
+  //     server.dispose();
+  //     return;
+  //   }
+  //   setState(() => _localServer = server);
+  // }
 
   void _connect() async {
     final baseId = 'com_openup_${widget.roomId}';
@@ -71,21 +81,19 @@ class _VideoPageState extends State<VideoPage> {
       connection.close();
       return;
     }
-    setState(() => _connection = connection);
 
-    final localServer = _localServer;
-    if (localServer != null) {
-      await _player.open(Media(localServer.url));
-    }
+    setState(() => _connection = connection);
 
     // Receive remote video
     final h265Stream =
         connection.binaryStream.map((e) => Uint8List.fromList(e));
-    final mp4Stream = await h265ToMp4(h265Stream);
-    if (!mounted || mp4Stream == null) {
+    final result = await h265ToHls(h265Stream, _hlsServer.url);
+    if (!mounted) {
       return;
     }
-    _localServer?.addStream(mp4Stream);
+    if (!result) {
+      return;
+    }
 
     // Send local video
     final outputStream = await startRecording();
@@ -97,6 +105,22 @@ class _VideoPageState extends State<VideoPage> {
       return;
     }
     setState(() => _ready = true);
+
+    await Future.delayed(const Duration(seconds: 5));
+    print('### Start video player');
+    _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse('${_hlsServer.url}/stream.m3u8'))
+      ..initialize().then((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+
+    // await _player.open(Media('${_hlsServer.url}/stream.m3u8'));
+    // final localServer = _localServer;
+    // if (localServer != null) {
+    //   await _player.open(Media(localServer.url));
+    // }
   }
 
   @override
@@ -109,16 +133,25 @@ class _VideoPageState extends State<VideoPage> {
       ),
       body: Builder(
         builder: (context) {
-          final localServer = _localServer;
-          if (localServer == null) {
-            return const SizedBox.shrink();
-          }
+          // final localServer = _localServer;
+          // if (localServer == null) {
+          //   return const SizedBox.shrink();
+          // }
           return Stack(
             children: [
               Positioned.fill(
-                child: Video(
-                  controller: _videoController,
-                  controls: (_) => const SizedBox.shrink(),
+                child: Builder(
+                  builder: (context) {
+                    final controller = _videoPlayerController;
+                    if (controller == null || !controller.value.isInitialized) {
+                      return const SizedBox.shrink();
+                    }
+                    return VideoPlayer(controller);
+                    // return Video(
+                    //   controller: _videoController,
+                    //   controls: (_) => const SizedBox.shrink(),
+                    // );
+                  },
                 ),
               ),
               Positioned(
