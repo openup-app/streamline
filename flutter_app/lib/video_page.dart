@@ -5,6 +5,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:streamline/incoming_video.dart';
 import 'package:streamline/partcipant.dart';
+import 'package:streamline/record.dart';
 
 class VideoPage extends StatefulWidget {
   final String roomId;
@@ -51,6 +52,7 @@ class _VideoPageState extends State<VideoPage> {
       return;
     }
     setState(() => _localServer = server);
+    _player.open(Media(server.address.path));
   }
 
   void _connect() async {
@@ -70,6 +72,7 @@ class _VideoPageState extends State<VideoPage> {
     }
     setState(() => _connection = connection);
 
+    // Receive remote video
     final h265Stream =
         connection.binaryStream.map((e) => Uint8List.fromList(e));
     final mp4Stream = await h265ToMp4(h265Stream);
@@ -77,6 +80,12 @@ class _VideoPageState extends State<VideoPage> {
       return;
     }
     _localServer?.addStream(mp4Stream);
+
+    // Send local video
+    final outputStream = await startRecording();
+    outputStream
+        ?.map((e) => Uint8List.fromList(e))
+        .listen((data) => connection.sendUint8List(data));
   }
 
   @override
