@@ -100,8 +100,7 @@ Future<bool> h265ToHls(Stream<Uint8List> videoData, String url) async {
   inputSink.addStream(videoData);
 
   final command =
-      '-hide_banner -i $inputPipe -c:v copy -y -f hls -hls_time 4 -hls_list_size 5 -hls_flags delete_segments -method PUT $url/stream.m3u8';
-  print('### Command $command');
+      '-hide_banner -i $inputPipe -c:v copy -y -f hls -hls_segment_type fmp4 -hls_time 2 -hls_list_size 5 -hls_flags delete_segments -method PUT $url/stream.m3u8';
 
   await FFmpegKit.executeAsync(
     command,
@@ -119,6 +118,7 @@ class HlsServer {
   StreamSubscription? _streamSubscription;
 
   final memoryStore = <String, List<int>>{};
+  final _firstPut = Completer<void>();
 
   Future<void> start() async {
     final app = Router()
@@ -130,7 +130,7 @@ class HlsServer {
     final server = await serve(handler, InternetAddress.loopbackIPv4, 0);
     _server = server;
     print(
-        '### Server listening on http://${server.address.host}:${server.port}');
+        '### Server listening on http://${_server?.address.host}:${server.port}');
   }
 
   void addStream(Stream<Uint8List> stream) {
@@ -143,6 +143,8 @@ class HlsServer {
     _server?.close();
   }
 
+  Future<void> get hasFirstContent => _firstPut.future;
+
   String get url =>
       _server == null ? '' : 'http://${_server?.address.host}:${_server?.port}';
 
@@ -151,6 +153,9 @@ class HlsServer {
     print('#### Put $path');
     final content = await request.read().toList();
     memoryStore[path] = content.expand((e) => e).toList();
+    if (!_firstPut.isCompleted) {
+      _firstPut.complete();
+    }
     return Response.ok('Received $path');
   }
 
@@ -165,7 +170,6 @@ class HlsServer {
             : 'video/mp2t',
       });
     }
-    print('### Not Found');
     return Response.notFound('Not found');
   }
 }

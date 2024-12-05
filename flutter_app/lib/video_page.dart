@@ -106,12 +106,13 @@ class _VideoPageState extends State<VideoPage> {
     }
     setState(() => _ready = true);
 
-    await Future.delayed(const Duration(seconds: 5));
+    await _hlsServer.hasFirstContent;
     print('### Start video player');
     _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse('${_hlsServer.url}/stream.m3u8'))
       ..initialize().then((_) {
         if (mounted) {
+          _videoPlayerController?.play();
           setState(() {});
         }
       });
@@ -146,7 +147,10 @@ class _VideoPageState extends State<VideoPage> {
                     if (controller == null || !controller.value.isInitialized) {
                       return const SizedBox.shrink();
                     }
-                    return VideoPlayer(controller);
+                    return AspectRatio(
+                      aspectRatio: controller.value.aspectRatio,
+                      child: VideoPlayer(controller),
+                    );
                     // return Video(
                     //   controller: _videoController,
                     //   controls: (_) => const SizedBox.shrink(),
