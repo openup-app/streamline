@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:streamline/incoming_video.dart';
 import 'package:streamline/partcipant.dart';
 import 'package:streamline/record.dart';
@@ -66,23 +64,21 @@ class _VideoPageState extends State<VideoPage> {
     }
 
     setState(() => _connection = connection);
+    await Future.delayed(const Duration(seconds: 3));
 
     // Receive remote video
-    final h265Stream =
-        connection.binaryStream.map((e) => Uint8List.fromList(e));
-    final result = await h265ToHls(h265Stream, _hlsServer.url);
-    if (!mounted) {
+    final h265Stream = connection.binaryStream;
+    if (!await h265ToHls(h265Stream, _hlsServer.url)) {
+      debugPrint('[VideoPage] Failed to start H265 to HLS conversion');
       return;
     }
-    if (!result) {
+    if (!mounted) {
       return;
     }
 
     // Send local video
     final outputStream = await startRecording();
-    _outputStreamSubscription = outputStream
-        ?.map((e) => Uint8List.fromList(e))
-        .listen((data) => connection.sendUint8List(data));
+    _outputStreamSubscription = outputStream?.listen(connection.sendUint8List);
 
     if (!mounted) {
       return;

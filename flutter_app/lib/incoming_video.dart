@@ -89,7 +89,7 @@ Future<bool> h265ToHls(Stream<Uint8List> videoData, String url) async {
   final videoSubscription = videoData.listen(inputSink.add);
 
   final command =
-      '-hide_banner -i $inputPipe -c:v copy -y -f hls -hls_segment_type fmp4 -hls_time 2 -hls_list_size 5 -hls_flags delete_segments -tag:v hvc1 -method PUT $url/stream.m3u8';
+      '-hide_banner -re -f hevc -i $inputPipe -c:v copy -y -tag:v hvc1 -f hls -hls_segment_type fmp4 -hls_time 2 -hls_list_size 5 -hls_flags delete_segments -method PUT $url/stream.m3u8';
 
   await FFmpegKit.executeAsync(
     command,
