@@ -1,93 +1,82 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:ffmpeg_kit_flutter_min/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_min/ffmpeg_kit_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_router/shelf_router.dart';
 
-class IncomingVideoLocalServer {
-  final HttpServer _server;
-  final StreamController<Uint8List> _responseController;
+class HlsServer {
+  HttpServer? _server;
   StreamSubscription? _streamSubscription;
 
-  static Future<IncomingVideoLocalServer> create({
-    String mimeType = 'video/mp4',
-  }) async {
-    final responseController = StreamController<Uint8List>.broadcast();
-    final server = await _createServer(responseController.stream, mimeType);
-    return IncomingVideoLocalServer._(server, responseController);
-  }
+  final memoryStore = <String, List<int>>{};
+  final _hasContent = Completer<void>();
 
-  IncomingVideoLocalServer._(this._server, this._responseController);
+  Future<void> start() async {
+    final app = Router()
+      ..put('/<path|.*>', _handlePut)
+      ..get('/<path|.*>', _handleGet)
+      ..delete('/path|.*>', _handleDelete);
+
+    final handler =
+        const Pipeline().addMiddleware(logRequests()).addHandler(app.call);
+    final server = await serve(handler, InternetAddress.loopbackIPv4, 0);
+    _server = server;
+    debugPrint(
+        'HLS server listening on http://${_server?.address.host}:${server.port}');
+  }
 
   void addStream(Stream<Uint8List> stream) {
     _streamSubscription?.cancel();
-    _streamSubscription = stream.listen((data) {
-      _responseController.add(data);
-    });
+    _streamSubscription = stream.listen((data) {});
   }
 
   void dispose() {
     _streamSubscription?.cancel();
-    _server.close();
-    _responseController.close();
+    _server?.close();
   }
 
-  String get url => 'http://localhost:${_server.port}';
-}
+  Future<void> get hasContent => _hasContent.future;
 
-Future<HttpServer> _createServer(
-  Stream<Uint8List> responseStream,
-  String mimeType,
-) async {
-  final router = Router();
+  String get url =>
+      _server == null ? '' : 'http://${_server?.address.host}:${_server?.port}';
 
-  router.get('/', (Request request) {
-    return Response.ok(
-      responseStream,
-      headers: {
-        'Content-Type': mimeType,
-        // 'Transfer-Encoding': 'chunked',
-      },
-    );
-  });
-
-  final handler =
-      const Pipeline().addMiddleware(logRequests()).addHandler(router.call);
-
-  return await serve(handler, 'localhost', 0);
-}
-
-Future<Stream<Uint8List>?> h265ToMp4(Stream<Uint8List> videoData) async {
-  final inputPipe = await FFmpegKitConfig.registerNewFFmpegPipe();
-  final outputPipe = await FFmpegKitConfig.registerNewFFmpegPipe();
-  if (inputPipe == null || outputPipe == null) {
-    return null;
+  Future<Response> _handlePut(Request request) async {
+    final path = request.url.path;
+    debugPrint('[HLS Server] Put $path');
+    final content = await request.read().toList();
+    memoryStore[path] = content.expand((e) => e).toList();
+    if (!_hasContent.isCompleted) {
+      _hasContent.complete();
+    }
+    return Response.ok('Received $path');
   }
 
-  final inputSink = File(inputPipe).openWrite();
-  inputSink.addStream(videoData);
+  Response _handleGet(Request request) {
+    final path = request.url.path;
+    debugPrint('[HLS Server] Get $path');
+    if (memoryStore.containsKey(path)) {
+      return Response.ok(memoryStore[path]!, headers: {
+        'Content-Type': path.endsWith('.m3u8')
+            ? 'application/vnd.apple.mpegurl'
+            : 'video/mp2t',
+      });
+    }
+    return Response.notFound('Not found');
+  }
 
-  final command =
-      '-hide_banner -i $inputPipe -c:v copy -y -f mp4 -movflags +frag_keyframe+empty_moov $outputPipe';
-
-  final outputByteStream =
-      File(outputPipe).openRead().map(Uint8List.fromList).asBroadcastStream();
-
-  await FFmpegKit.executeAsync(
-    command,
-    (_) async {
-      await inputSink.close();
-      await FFmpegKitConfig.closeFFmpegPipe(inputPipe);
-      await FFmpegKitConfig.closeFFmpegPipe(outputPipe);
-    },
-    (log) => print(log.getMessage()),
-  );
-
-  return outputByteStream;
+  Response _handleDelete(Request request) {
+    final path = request.url.path;
+    debugPrint('[HLS Server] Delete $path');
+    if (memoryStore.containsKey(path)) {
+      memoryStore.remove(path);
+      return Response.ok('Removed $path');
+    }
+    return Response.notFound('Not found');
+  }
 }
 
 Future<bool> h265ToHls(Stream<Uint8List> videoData, String url) async {
@@ -108,68 +97,7 @@ Future<bool> h265ToHls(Stream<Uint8List> videoData, String url) async {
       await inputSink.close();
       await FFmpegKitConfig.closeFFmpegPipe(inputPipe);
     },
-    (log) => print(log.getMessage()),
+    (log) => debugPrint(log.getMessage()),
   );
   return true;
-}
-
-class HlsServer {
-  HttpServer? _server;
-  StreamSubscription? _streamSubscription;
-
-  final memoryStore = <String, List<int>>{};
-  final _firstPut = Completer<void>();
-
-  Future<void> start() async {
-    final app = Router()
-      ..put('/<path|.*>', _handlePut)
-      ..get('/<path|.*>', _serveHls);
-
-    final handler =
-        const Pipeline().addMiddleware(logRequests()).addHandler(app.call);
-    final server = await serve(handler, InternetAddress.loopbackIPv4, 0);
-    _server = server;
-    print(
-        '### Server listening on http://${_server?.address.host}:${server.port}');
-  }
-
-  void addStream(Stream<Uint8List> stream) {
-    _streamSubscription?.cancel();
-    _streamSubscription = stream.listen((data) {});
-  }
-
-  void dispose() {
-    _streamSubscription?.cancel();
-    _server?.close();
-  }
-
-  Future<void> get hasFirstContent => _firstPut.future;
-
-  String get url =>
-      _server == null ? '' : 'http://${_server?.address.host}:${_server?.port}';
-
-  Future<Response> _handlePut(Request request) async {
-    final path = request.url.path;
-    print('#### Put $path');
-    final content = await request.read().toList();
-    memoryStore[path] = content.expand((e) => e).toList();
-    if (!_firstPut.isCompleted) {
-      _firstPut.complete();
-    }
-    return Response.ok('Received $path');
-  }
-
-  Response _serveHls(Request request) {
-    final path = request.url.path;
-    print('#### Get $path');
-    if (memoryStore.containsKey(path)) {
-      print('### Found');
-      return Response.ok(memoryStore[path]!, headers: {
-        'Content-Type': path.endsWith('.m3u8')
-            ? 'application/vnd.apple.mpegurl'
-            : 'video/mp2t',
-      });
-    }
-    return Response.notFound('Not found');
-  }
 }

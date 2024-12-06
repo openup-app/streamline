@@ -89,16 +89,24 @@ class _VideoPageState extends State<VideoPage> {
     }
     setState(() => _ready = true);
 
-    await _hlsServer.hasFirstContent;
-    print('### Start video player');
+    await _hlsServer.hasContent;
+    debugPrint('[VideoPlayer] Start');
+    final tempPlayDelay = Completer<void>();
     _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse('${_hlsServer.url}/stream.m3u8'))
       ..initialize().then((_) {
         if (mounted) {
-          _videoPlayerController?.play();
+          Future.delayed(const Duration(seconds: 2))
+              .then(((_) => tempPlayDelay.complete()));
           setState(() {});
         }
       });
+
+    await tempPlayDelay.future;
+    if (mounted) {
+      debugPrint('[VideoPlayer] Play');
+      _videoPlayerController?.play();
+    }
   }
 
   @override

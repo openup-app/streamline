@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:peerdart/peerdart.dart';
 
 class Participant {
@@ -27,7 +27,7 @@ class Connection {
 
   Connection(this._connection) {
     _connection.on("close").listen((_) {
-      print('Closed');
+      debugPrint('[Connection] Closed');
     });
   }
 
