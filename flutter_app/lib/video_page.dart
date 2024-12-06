@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart' as mk;
+import 'package:flutter/services.dart';
 import 'package:streamline/incoming_video.dart';
 import 'package:streamline/partcipant.dart';
 import 'package:streamline/record.dart';
@@ -23,13 +23,11 @@ class VideoPage extends StatefulWidget {
 }
 
 class _VideoPageState extends State<VideoPage> {
-  // IncomingVideoLocalServer? _localServer;
   final _hlsServer = HlsServer();
   Connection? _connection;
-  late final _player = Player();
-  // late final _videoController = VideoController(_player);
   VideoPlayerController? _videoPlayerController;
   bool _ready = false;
+  StreamSubscription? _outputStreamSubscription;
 
   @override
   void initState() {
@@ -40,31 +38,16 @@ class _VideoPageState extends State<VideoPage> {
       }
       _connect();
     });
-    // _initLocalServer().then((_) {
-    //   if (mounted) {
-    //     _connect();
-    //   }
-    // });
   }
 
   @override
   void dispose() {
     stopRecording();
-    // _localServer?.dispose();
     _hlsServer.dispose();
     _connection?.close();
-    _player.dispose();
+    _outputStreamSubscription?.cancel();
     super.dispose();
   }
-
-  // Future<void> _initLocalServer() async {
-  //   final server = await IncomingVideoLocalServer.create();
-  //   if (!mounted) {
-  //     server.dispose();
-  //     return;
-  //   }
-  //   setState(() => _localServer = server);
-  // }
 
   void _connect() async {
     final baseId = 'com_openup_${widget.roomId}';
@@ -97,7 +80,7 @@ class _VideoPageState extends State<VideoPage> {
 
     // Send local video
     final outputStream = await startRecording();
-    outputStream
+    _outputStreamSubscription = outputStream
         ?.map((e) => Uint8List.fromList(e))
         .listen((data) => connection.sendUint8List(data));
 
@@ -116,12 +99,6 @@ class _VideoPageState extends State<VideoPage> {
           setState(() {});
         }
       });
-
-    // await _player.open(Media('${_hlsServer.url}/stream.m3u8'));
-    // final localServer = _localServer;
-    // if (localServer != null) {
-    //   await _player.open(Media(localServer.url));
-    // }
   }
 
   @override
@@ -134,10 +111,6 @@ class _VideoPageState extends State<VideoPage> {
       ),
       body: Builder(
         builder: (context) {
-          // final localServer = _localServer;
-          // if (localServer == null) {
-          //   return const SizedBox.shrink();
-          // }
           return Stack(
             children: [
               Positioned.fill(
@@ -151,10 +124,6 @@ class _VideoPageState extends State<VideoPage> {
                       aspectRatio: controller.value.aspectRatio,
                       child: VideoPlayer(controller),
                     );
-                    // return Video(
-                    //   controller: _videoController,
-                    //   controls: (_) => const SizedBox.shrink(),
-                    // );
                   },
                 ),
               ),
