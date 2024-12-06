@@ -19,7 +19,7 @@ class HlsServer {
     final app = Router()
       ..put('/<path|.*>', _handlePut)
       ..get('/<path|.*>', _handleGet)
-      ..delete('/path|.*>', _handleDelete);
+      ..delete('/<path|.*>', _handleDelete);
 
     final handler =
         const Pipeline().addMiddleware(logRequests()).addHandler(app.call);
@@ -86,7 +86,7 @@ Future<bool> h265ToHls(Stream<Uint8List> videoData, String url) async {
   }
 
   final inputSink = File(inputPipe).openWrite();
-  inputSink.addStream(videoData);
+  final videoSubscription = videoData.listen(inputSink.add);
 
   final command =
       '-hide_banner -i $inputPipe -c:v copy -y -f hls -hls_segment_type fmp4 -hls_time 2 -hls_list_size 5 -hls_flags delete_segments -tag:v hvc1 -method PUT $url/stream.m3u8';
@@ -94,6 +94,7 @@ Future<bool> h265ToHls(Stream<Uint8List> videoData, String url) async {
   await FFmpegKit.executeAsync(
     command,
     (_) async {
+      videoSubscription.cancel();
       await inputSink.close();
       await FFmpegKitConfig.closeFFmpegPipe(inputPipe);
     },
